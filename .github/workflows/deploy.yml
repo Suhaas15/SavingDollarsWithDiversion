@@ -10,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out the repo
+      - name: Check out the repository
         uses: actions/checkout@v4
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v3
 
-      - name: Upload to Pages artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: .
-      
+
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v2
