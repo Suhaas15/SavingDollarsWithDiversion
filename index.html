@@ -2,341 +2,674 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Saving Dollars with Diversion</title>
   <!-- D3 for CSV loading -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <!-- Plotly -->
   <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* light theme */
-      --bg-color:       #fff;
-      --text-color:     #333;
-      --cardinal:       #8C1515;
-      --cardinal-hover: #A31F1F;
-      --btn-text:       #fff;
-      --chart-paper:    #fafafa;
-      --chart-plot:     #fff;
-      --grid-color:     #ddd;
-      --zeroline-color: #bbb;
+      /* Page & theme colors - enhanced palette */
+      --bg-color:          #f7f9fc;
+      --bg-gradient-start: #fcf5e8;
+      --bg-gradient-end:   #fff4e0;
+      --text-color:        #2c3e50;
+      --text-muted:        #6c757d;
+      --cardinal:          #8C1515;
+      --cardinal-light:    #cb4154;
+      --cardinal-dark:     #6e0f0f;
+      --chart-paper:       #ffffff;
+      --chart-plot:        #fafafa;
+      --grid-color:        #f0f0f0;
+      --zeroline-color:    #dddddd;
+      /* Waste stream consistency colors */
+      --color-landfill:    #555555;
+      --color-recycling:   #1f77b4;
+      --color-compost:     #2ca02c;
+      --color-reuse:       #ff7f0e;
+      /* Card properties */
+      --card-radius:       12px;
+      --card-shadow:       0 4px 20px rgba(0,0,0,0.07);
+      --card-hover-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      /* Transitions */
+      --transition-speed:  0.25s;
     }
-    .dark {
-      /* dark theme overrides */
-      --bg-color:       #222;
-      --text-color:     #eee;
-      --cardinal:       #C34A4A;
-      --cardinal-hover: #E06666;
-      --btn-text:       #222;
-      --chart-paper:    #333;
-      --chart-plot:     #222;
-      --grid-color:     #555;
-      --zeroline-color: #777;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
     body {
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg-color);
       color: var(--text-color);
-      margin: 0 auto; padding: 10px;
-      box-sizing: border-box;
-      max-width: 100%;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+    }
+    .page-wrapper {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+    /* Hero banner styling */
+    .hero {
+      background: linear-gradient(135deg, var(--cardinal) 0%, var(--cardinal-dark) 100%);
+      color: #fff;
+      padding: 40px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
       position: relative;
+      overflow: hidden;
     }
-    /* Storyline title */
-    h1.storyline {
-      text-align: center;
-      font-size: 36px;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-    /* Dark mode switch */
-    .toggle-container {
+    .hero::before {
+      content: "";
       position: absolute;
-      top: 20px; right: 20px;
-      display: flex; align-items: center;
-      cursor: pointer; user-select: none;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 50%);
+    }
+    .hero-content {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+      z-index: 2;
+    }
+    .hero h1 {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      padding-top: 15px;
+      line-height: 1.2;
+    }
+    .tagline {
+      margin-top: 12px;
+      font-size: 16px;
+      opacity: 0.85;
+      max-width: 600px;
+      font-weight: 500;
+    }
+    /* Dashboard intro */
+    .dashboard-intro {
+      text-align: center;
+      margin: 30px auto;
+      max-width: 800px;
+      padding: 0 20px;
+    }
+    .dashboard-intro h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: var(--cardinal);
+    }
+    .dashboard-intro p {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    /* KPI Panel styling */
+    #kpi-panel {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 30px 0;
+    }
+    .kpi {
+      position: relative;
+      background: var(--chart-paper);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      text-align: center;
+      box-shadow: var(--card-shadow);
+      transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+      overflow: hidden;
+    }
+    .kpi:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--card-hover-shadow);
+    }
+    .kpi::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 6px;
+      background: linear-gradient(90deg, var(--cardinal) 0%, var(--cardinal-light) 100%);
+      border-radius: var(--card-radius) var(--card-radius) 0 0;
+    }
+    .kpi-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+      color: var(--cardinal);
+    }
+    .kpi-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--cardinal);
+      margin-bottom: 4px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .kpi-label {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    /* Chart container styling */
+    .chart-container {
+      background: var(--chart-paper);
+      border-radius: var(--card-radius);
+      padding: 24px;
+      box-shadow: var(--card-shadow);
+      margin: 30px 0;
+      transition: box-shadow var(--transition-speed);
+    }
+    .chart-container:hover {
+      box-shadow: var(--card-hover-shadow);
+    }
+    /* Chart header styling */
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .chart-title {
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      align-items: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-color);
+      margin: 0;
+    }
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: var(--chart-plot);
+      border-radius: 50%;
+      margin-left: 8px;
+      cursor: help;
+      font-size: 13px;
+      transition: background-color var(--transition-speed), transform var(--transition-speed);
+    }
+    .info-icon:hover {
+      background: #e8e8e8;
+      transform: scale(1.1);
+    }
+    /* Button styling */
+    .button-container {
+      display: flex;
+      gap: 10px;
+    }
+    .toggle-button {
+      background: var(--cardinal);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background var(--transition-speed), transform var(--transition-speed);
+      box-shadow: 0 2px 4px rgba(140, 21, 21, 0.2);
+      display: flex;
+      align-items: center;
+    }
+    .toggle-button:hover {
+      background: var(--cardinal-light);
+      transform: translateY(-2px);
+    }
+    .toggle-button:active {
+      transform: translateY(0);
+    }
+    .button-icon {
+      margin-right: 6px;
+    }
+    /* Tip and description styling */
+    .chart-description {
+      margin-bottom: 15px;
+      color: var(--text-muted);
       font-size: 14px;
     }
-    .toggle-container input {
-      opacity: 0; width: 0; height: 0;
-    }
-    .switch {
-      position: relative; width: 40px; height: 20px; margin-left: 8px;
-    }
-    .slider {
-      position: absolute; top:0; left:0; right:0; bottom:0;
-      background-color: #ccc; transition: .4s; border-radius: 20px;
-    }
-    .slider:before {
-      position: absolute; content: "";
-      height:16px; width:16px; left:2px; bottom:2px;
-      background-color:white; transition:.4s; border-radius:50%;
-    }
-    .toggle-container input:checked + .switch .slider {
-      background-color: var(--cardinal);
-    }
-    .toggle-container input:checked + .switch .slider:before {
-      transform: translateX(20px);
-    }
-
-    h2 {
-      margin: 24px 0 8px;
-      font-size: 24px; font-weight: bold;
-      display: flex; align-items: center;
-    }
-    #controls {
-      text-align: right; margin: 8px 0 16px;
-    }
-    button {
-      background: var(--cardinal);
-      color: var(--btn-text);
-      border: none; border-radius: 4px;
-      padding: 8px 16px; font-size: 14px;
-      cursor: pointer; margin-left: 8px;
-    }
-    button:hover {
-      background: var(--cardinal-hover);
-    }
-    .chart-container { width: 100%; margin-bottom: 48px; }
     .tip {
-      font-size: 13px; color: var(--text-color);
-      margin-top: 4px; font-style: italic;
+      background: rgba(0,0,0,0.03);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
     }
-    .download-btn {
-      background: var(--cardinal);
-      color: var(--btn-text);
-      border: none; border-radius: 4px;
-      padding: 6px 12px; font-size: 14px;
-      cursor: pointer; margin-top: 8px;
+    .tip-icon {
+      margin-right: 8px;
+      color: var(--cardinal);
     }
-    .download-btn:hover {
-      background: var(--cardinal-hover);
+    /* Chart section styling */
+    .chart-section {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
     }
-    .info-icon { margin-left: 8px; cursor: help; }
-
+    /* Legend styling */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+    /* Responsive styling */
+    @media (max-width: 900px) {
+      .hero h1 { font-size: 36px; }
+      #kpi-panel { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 32px; }
+      .hero { padding: 30px 0; }
+      .dashboard-intro { margin: 20px auto; }
+      #kpi-panel { grid-template-columns: repeat(2, 1fr); }
+      .chart-container { padding: 20px; margin: 24px 0; }
+    }
     @media (max-width: 600px) {
-      h1.storyline { font-size: 28px; }
-      h2 {
-        font-size: 20px;
-        margin: 16px 0 6px;
-      }
-      button, .download-btn {
-        padding: 6px 10px;
-        font-size: 12px;
-      }
-      .tip {
-        font-size: 12px;
-      }
+      .hero h1 { font-size: 28px; }
+      .tagline { font-size: 14px; }
+      #kpi-panel { grid-template-columns: 1fr; }
+      .chart-container { padding: 16px; margin: 20px 0; }
+      .chart-title { font-size: 18px; }
+      .toggle-button { padding: 6px 12px; font-size: 13px; }
+      .tip { font-size: 12px; }
     }
+    /* Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animated {
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
   </style>
 </head>
 <body>
-
-  <h1 class="storyline">Saving Dollars with Diversion</h1>
-
-  <label class="toggle-container">
-    Dark Mode
-    <input type="checkbox" id="darkToggleSwitch">
-    <div class="switch"><span class="slider"></span></div>
-  </label>
-
-  <div class="chart-container">
-    <h2>
-      Monthly Savings from Diversion
-      <span class="info-icon"
-            title="• Drag the date slider underneath to zoom
-• Click & drag inside the plot to pan/zoom
-• Click legend entries to show/hide traces
-• Use the ‘Show Cumulative’ button to switch views">
-        ℹ️
-      </span>
-    </h2>
-    <div id="controls">
-      <button id="toggleView">Show Cumulative</button>
+  <!-- Hero Banner -->
+  <div class="hero">
+    <div class="hero-content">
+      <h1>Saving Dollars with Diversion</h1>
+      <p class="tagline">Track how waste diversion strategies translate to real financial savings for your organization.</p>
     </div>
-    <div id="savingsPlot"></div>
-    <button id="downloadSavings" class="download-btn">Download Savings Data</button>
-    <p class="tip">Tip: Drag the slider below or click legend items to explore the data.</p>
   </div>
 
-  <div class="chart-container">
-    <h2>
-      Cost Breakdown vs. Hypothetical All‑Landfill
-      <span class="info-icon"
-            title="• Use the date slider to zoom
-• Click legend entries to toggle streams">
-        ℹ️
-      </span>
-    </h2>
-    <div id="costPlot"></div>
-    <button id="downloadCost" class="download-btn">Download Cost Data</button>
-    <p class="tip">Tip: Click on any legend entry (e.g. Landfill, Compost) to toggle that stream.</p>
+  <div class="page-wrapper">
+    <!-- Dashboard Introduction -->
+    <div class="dashboard-intro animated">
+      <h2>Waste Diversion Financial Impact</h2>
+      <p>This dashboard visualizes the financial benefits of waste diversion strategies compared to traditional landfill disposal. See the immediate and long-term cost savings from recycling, composting, and reuse initiatives.</p>
+    </div>
+    
+    <!-- KPI Panel -->
+    <div id="kpi-panel">
+      <div class="kpi animated delay-1">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-value" id="kpi-savings">Loading…</div>
+        <div class="kpi-label">Total Savings</div>
+      </div>
+      <div class="kpi animated delay-2">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-value" id="kpi-actual">Loading…</div>
+        <div class="kpi-label">Actual Waste Management Cost</div>
+      </div>
+      <div class="kpi animated delay-3">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-value" id="kpi-hypo">Loading…</div>
+        <div class="kpi-label">Hypothetical All-Landfill Cost</div>
+      </div>
+    </div>
+
+    <!-- Chart 1: Savings -->
+    <div class="chart-container animated delay-4">
+      <div class="chart-header">
+        <h2 class="chart-title">
+          Monthly Savings from Diversion
+          <span class="info-icon" title="• Drag the date slider to zoom&#10;• Click legend entries to toggle view">i</span>
+        </h2>
+        <div class="button-container">
+          <button id="toggleView" class="toggle-button">
+            <span class="button-icon">📊</span>Show Cumulative
+          </button>
+        </div>
+      </div>
+      <p class="chart-description">Compare monthly savings against cumulative financial benefits over time from waste diversion strategies.</p>
+      <div id="savingsPlot" style="height:400px;"></div>
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        Drag the slider below the chart to zoom in on specific time periods, or click legend items to toggle data series.
+      </div>
+    </div>
+
+    <!-- Chart 2: Cost Breakdown -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h2 class="chart-title">
+          Cost Breakdown vs. Hypothetical All‑Landfill
+          <span class="info-icon" title="• Drag slider to zoom&#10;• Click legend entries to show/hide streams">i</span>
+        </h2>
+      </div>
+      <p class="chart-description">See how your waste stream costs break down compared to what you would have spent sending everything to landfill.</p>
+      <div id="costPlot" style="height:400px;"></div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-landfill);"></div>
+          <span>Landfill</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-recycling);"></div>
+          <span>Recycling</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-compost);"></div>
+          <span>Compost</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: var(--color-reuse);"></div>
+          <span>Reuse</span>
+        </div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        Click legend entries to show or hide specific waste streams and compare costs more effectively.
+      </div>
+    </div>
+
+    <!-- Chart 3: Net Benefit -->
+    <div class="chart-container">
+      <div class="chart-header">
+        <h2 class="chart-title">
+          Cumulative Net Benefit Over Time
+          <span class="info-icon" title="Net benefit = hypothetical cost – actual cost cumulative">i</span>
+        </h2>
+      </div>
+      <p class="chart-description">Track the growing financial benefits of your diversion programs as they accumulate over time.</p>
+      <div id="netBenefitPlot" style="height:400px;"></div>
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        The steeper the slope, the greater the rate of financial benefit from your diversion strategies.
+      </div>
+    </div>
   </div>
 
   <script>
-    let savingsLayout, costLayout;
-    let savingsPlotInited = false, costPlotInited = false;
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Function to format currency values
+      function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(value);
+      }
 
-    d3.csv('data/monthly_savings.csv').then(rows => {
-      const dates      = rows.map(r => r.Date);
-      const monthly    = rows.map(r => +r.monthly_savings);
-      const cumulative = rows.map(r => +r.cumulative_savings);
-      const actualCost = rows.map(r => +r.actual_cost);
-      const hypoCost   = rows.map(r => +r.hypothetical_cost);
+      // Load and process data
+      d3.csv('data/monthly_savings.csv').then(rows => {
+        const dates      = rows.map(r => r.Date);
+        const monthly    = rows.map(r => +r.monthly_savings);
+        const cumulative = rows.map(r => +r.cumulative_savings);
+        const actualCost = rows.map(r => +r.actual_cost);
+        const hypoCost   = rows.map(r => +r.hypothetical_cost);
 
-      // --- Savings Chart ---
-      let mode = 'monthly';
-      const traceM = { x: dates, y: monthly, mode: 'lines+markers',
-        name: 'Monthly Savings', line: { color: '#17becf', width: 2 },
-        hovertemplate: '%{x}<br>$%{y:.2f}<extra></extra>' };
-      const traceC = { x: dates, y: cumulative, mode: 'lines+markers',
-        name: 'Cumulative Savings', line: { color: '#7f7f7f', width: 2 },
-        visible: false, hovertemplate: '%{x}<br>$%{y:.2f}<extra></extra>' };
-      savingsLayout = {
-        font: { family: 'Helvetica Neue, Arial, sans-serif', size: 14, color: 'var(--text-color)' },
-        paper_bgcolor: 'var(--chart-paper)',
-        plot_bgcolor: 'var(--chart-plot)',
-        margin: { t:20, r:30, b:80, l:60 },
-        xaxis: {
-          title: { text: 'Date', font: { size:16, color:'var(--text-color)' } },
-          tickfont: { size:12, color:'var(--text-color)' },
-          gridcolor: 'var(--grid-color)',
-          zerolinecolor: 'var(--zeroline-color)',
-          rangeselector: {
-            bgcolor: 'var(--cardinal)',
-            activecolor: 'var(--cardinal-hover)',
-            font: { color: '#fff' },
-            buttons: [
-              {count:6,label:'6m',step:'month',stepmode:'backward'},
-              {count:1,label:'1y',step:'year',stepmode:'backward'},
-              {step:'all',label:'All'}
-            ]
+        // Calculate and display KPIs
+        const totalSavings = cumulative[cumulative.length - 1] || d3.sum(monthly);
+        const totalActual  = d3.sum(actualCost);
+        const totalHypo    = d3.sum(hypoCost);
+        
+        d3.select('#kpi-savings').text(formatCurrency(totalSavings));
+        d3.select('#kpi-actual').text(formatCurrency(totalActual));
+        d3.select('#kpi-hypo').text(formatCurrency(totalHypo));
+
+        // Common chart configuration
+        const commonConfig = {
+          responsive: true,
+          toImageButtonOptions: {
+            format: 'png',
+            filename: 'diversion_chart',
+            height: 600,
+            width: 1200,
+            scale: 2
           },
-          rangeslider: { visible:true, bgcolor:'var(--chart-plot)' },
-          type: 'date'
-        },
-        yaxis: {
-          title: { text: 'Savings ($)', font: { size:16, color:'var(--text-color)' } },
-          tickfont: { size:12, color:'var(--text-color)' },
-          gridcolor: 'var(--grid-color)',
-          zerolinecolor: 'var(--zeroline-color)'
-        },
-        hovermode: 'closest',
-        shapes: [
-          { type:'line', x0:'2020-05-01', x1:'2020-05-01', y0:0, y1:Math.max(...monthly)*1.1,
-            line:{ color:'#d62728', dash:'dot' } },
-          { type:'line', x0:'2022-08-01', x1:'2022-08-01', y0:0, y1:Math.max(...monthly)*1.1,
-            line:{ color:'#2ca02c', dash:'dot' } }
-        ],
-        annotations: [
-          { x:'2020-05-01', y:Math.max(...monthly)*1.05, xref:'x', yref:'y',
-            text:'Move‑Out Campaign', showarrow:true, arrowhead:2, ax:0, ay:-40,
-            font:{ color:'#d62728', size:12 } },
-          { x:'2022-08-01', y:Math.max(...monthly)*1.05, xref:'x', yref:'y',
-            text:'Dining Hall Compost Pilot', showarrow:true, arrowhead:2, ax:0, ay:-40,
-            font:{ color:'#2ca02c', size:12 } }
-        ]
-      };
-      Plotly.newPlot('savingsPlot', [traceM, traceC], savingsLayout, {responsive:true})
-        .then(() => savingsPlotInited = true);
-      document.getElementById('toggleView').onclick = function(){
-        if(mode==='monthly'){
-          Plotly.restyle('savingsPlot',{visible:[false,true]});
-          this.textContent='Show Monthly'; mode='cumulative';
-        } else {
-          Plotly.restyle('savingsPlot',{visible:[true,false]});
-          this.textContent='Show Cumulative'; mode='monthly';
-        }
-      };
-
-      // --- Cost Breakdown Chart ---
-      const fractions = [0.4,0.3,0.2,0.1],
-            streams   = ['Landfill','Recycling','Compost','Reuse'],
-            colors    = ['#555555','#1f77b4','#2ca02c','#ff7f0e'];
-      const costTraces = streams.map((name,i) => ({
-        x: dates, y: actualCost.map(c=>c*fractions[i]),
-        name, stackgroup:'one', fillcolor:colors[i]
-      }));
-      costTraces.push({
-        x: dates, y: hypoCost,
-        name: 'All‑Landfill Cost', mode: 'lines',
-        line: { dash:'dash', color:'#d62728', width:2 }
-      });
-      costLayout = {
-        font: { family:'Helvetica Neue, Arial, sans-serif', size:14, color:'var(--text-color)' },
-        paper_bgcolor: 'var(--chart-paper)',
-        plot_bgcolor: 'var(--chart-plot)',
-        margin: { t:20, r:30, b:80, l:60 },
-        xaxis: {
-          title: { text:'Date', font:{ size:16, color:'var(--text-color)' } },
-          tickfont: { size:12, color:'var(--text-color)' },
-          gridcolor: 'var(--grid-color)', zerolinecolor:'var(--zeroline-color)',
-          rangeslider:{ visible:true, bgcolor:'var(--chart-plot)' },
-          type:'date'
-        },
-        yaxis: {
-          title: { text:'Cost ($)', font:{ size:16, color:'var(--text-color)' } },
-          tickfont: { size:12, color:'var(--text-color)' },
-          gridcolor: 'var(--grid-color)', zerolinecolor:'var(--zeroline-color)'
-        },
-        hovermode:'closest',
-        shapes: [
-          { type:'line', x0:'2020-05-01', x1:'2020-05-01', y0:0, y1:Math.max(...actualCost)*1.1,
-            line:{ color:'#d62728', dash:'dot' } },
-          { type:'line', x0:'2022-08-01', x1:'2022-08-01', y0:0, y1:Math.max(...actualCost)*1.1,
-            line:{ color:'#2ca02c', dash:'dot' } }
-        ],
-        annotations: [
-          { x:'2020-05-01', y:Math.max(...actualCost)*1.05, xref:'x', yref:'y',
-            text:'Move‑Out Campaign', showarrow:true, arrowhead:2, ax:0, ay:-40,
-            font:{ color:'#d62728', size:12 } },
-          { x:'2022-08-01', y:Math.max(...actualCost)*1.05, xref:'x', yref:'y',
-            text:'Dining Hall Compost Pilot', showarrow:true, arrowhead:2, ax:0, ay:-40,
-            font:{ color:'#2ca02c', size:12 } }
-        ]
-      };
-      Plotly.newPlot('costPlot', costTraces, costLayout, {responsive:true})
-        .then(() => costPlotInited = true);
-
-      // --- Download Data ---
-      function rowsToCSV(arr, cols) {
-        const header = cols.join(','),
-              lines  = arr.map(r => cols.map(c => `"${r[c]}"`).join(','));
-        return [header, ...lines].join('\n');
-      }
-      function downloadCSV(content, filename) {
-        const blob = new Blob([content], { type:'text/csv' }),
-              url  = URL.createObjectURL(blob),
-              a    = document.createElement('a');
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-      }
-      document.getElementById('downloadSavings').onclick = () => {
-        downloadCSV(rowsToCSV(rows, ['Date','monthly_savings','cumulative_savings']), 'savings_data.csv');
-      };
-      document.getElementById('downloadCost').onclick = () => {
-        downloadCSV(rowsToCSV(rows.map(r => ({
-          Date: r.Date,
-          actual_cost: r.actual_cost,
-          hypothetical_cost: r.hypothetical_cost
-        })), ['Date','actual_cost','hypothetical_cost']), 'cost_data.csv');
-      };
-
-      // --- Dark Mode Toggle ---
-      document.getElementById('darkToggleSwitch').addEventListener('change', e => {
-        document.body.classList.toggle('dark', e.target.checked);
-        const relayout = {
-          paper_bgcolor:  getComputedStyle(document.documentElement).getPropertyValue('--chart-paper'),
-          plot_bgcolor:   getComputedStyle(document.documentElement).getPropertyValue('--chart-plot'),
-          'font.color':   getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-          'xaxis.gridcolor':     getComputedStyle(document.documentElement).getPropertyValue('--grid-color'),
-          'xaxis.zerolinecolor': getComputedStyle(document.documentElement).getPropertyValue('--zeroline-color'),
-          'yaxis.gridcolor':     getComputedStyle(document.documentElement).getPropertyValue('--grid-color'),
-          'yaxis.zerolinecolor': getComputedStyle(document.documentElement).getPropertyValue('--zeroline-color')
+          modeBarButtonsToRemove: ['select2d', 'lasso2d']
         };
-        if (savingsPlotInited) Plotly.relayout('savingsPlot', relayout);
-        if (costPlotInited)    Plotly.relayout('costPlot',    relayout);
+
+        // Chart 1: Savings Chart (Monthly vs Cumulative)
+        let mode = 'monthly';
+        const traceM = { 
+          x: dates, 
+          y: monthly, 
+          mode: 'lines+markers', 
+          name: 'Monthly Savings', 
+          marker: { size: 6, color: '#17becf', line: { width: 1, color: '#049fb3' } },
+          line: { width: 3, shape: 'spline', smoothing: 0.3, color: '#17becf' } 
+        };
+        
+        const traceC = { 
+          x: dates, 
+          y: cumulative, 
+          mode: 'lines+markers', 
+          name: 'Cumulative Savings', 
+          visible: false, 
+          marker: { size: 6, color: '#7f7f7f', line: { width: 1, color: '#555555' } },
+          line: { width: 3, shape: 'spline', smoothing: 0.3, color: '#7f7f7f' } 
+        };
+        
+        const layoutS = {
+          paper_bgcolor: 'var(--chart-paper)', 
+          plot_bgcolor: 'var(--chart-plot)', 
+          font: { family: "'Inter', sans-serif", color: 'var(--text-color)' },
+          margin: { t: 10, r: 30, b: 60, l: 70 }, 
+          hovermode: 'closest',
+          xaxis: { 
+            title: { text: 'Date', font: { size: 14 } }, 
+            type: 'date', 
+            rangeslider: { 
+              visible: true, 
+              bgcolor:'var(--chart-plot)',
+              bordercolor: 'var(--grid-color)',
+              borderwidth: 1,
+              thickness: 0.1
+            }, 
+            gridcolor: 'var(--grid-color)', 
+            zerolinecolor: 'var(--zeroline-color)',
+            tickfont: { size: 12 }
+          },
+          yaxis: { 
+            title: { text: 'Savings ($)', font: { size: 14 } }, 
+            gridcolor: 'var(--grid-color)', 
+            zerolinecolor: 'var(--zeroline-color)',
+            tickfont: { size: 12 },
+            tickprefix: '$',
+            hoverformat: '$,.0f'
+          },
+          hoverlabel: { 
+            bgcolor: "#FFF", 
+            font: { size: 13, color: '#333' },
+            bordercolor: '#ddd'
+          },
+          legend: { 
+            orientation: 'h',
+            y: -0.15
+          }
+        };
+        
+        Plotly.newPlot('savingsPlot', [traceM, traceC], layoutS, commonConfig);
+        
+        document.getElementById('toggleView').onclick = function() {
+          if (mode === 'monthly') { 
+            Plotly.restyle('savingsPlot', { visible: [false, true] }); 
+            this.innerHTML = '<span class="button-icon">📊</span>Show Monthly';
+            mode = 'cumulative'; 
+          } else { 
+            Plotly.restyle('savingsPlot', { visible: [true, false] }); 
+            this.innerHTML = '<span class="button-icon">📊</span>Show Cumulative'; 
+            mode = 'monthly'; 
+          }
+        };
+
+        // Chart 2: Cost Breakdown Chart
+        const fractions = [0.4, 0.3, 0.2, 0.1]; // Example distribution - replace with actual data if available
+        const streams   = ['Landfill', 'Recycling', 'Compost', 'Reuse'];
+        const colors = [
+          getComputedStyle(document.documentElement).getPropertyValue('--color-landfill').trim(),
+          getComputedStyle(document.documentElement).getPropertyValue('--color-recycling').trim(),
+          getComputedStyle(document.documentElement).getPropertyValue('--color-compost').trim(),
+          getComputedStyle(document.documentElement).getPropertyValue('--color-reuse').trim()
+        ];
+        
+        const costTraces = streams.map((name, i) => ({ 
+          x: dates, 
+          y: actualCost.map(c => c * fractions[i]), 
+          name, 
+          stackgroup: 'one', 
+          fillcolor: colors[i],
+          line: { width: 0.5, color: colors[i] },
+          hovertemplate: '%{y:$,.0f}<extra>' + name + '</extra>'
+        }));
+        
+        costTraces.push({ 
+          x: dates, 
+          y: hypoCost, 
+          name: 'All‑Landfill (Hypothetical)', 
+          mode: 'lines', 
+          line: { width: 3, dash: 'dash', color: '#8C1515' },
+          hovertemplate: '%{y:$,.0f}<extra>All-Landfill</extra>'
+        });
+        
+        const layoutC = {
+          paper_bgcolor: 'var(--chart-paper)', 
+          plot_bgcolor: 'var(--chart-plot)', 
+          font: { family: "'Inter', sans-serif", color: 'var(--text-color)' },
+          margin: { t: 10, r: 30, b: 60, l: 70 }, 
+          hovermode: 'closest',
+          xaxis: { 
+            title: { text: 'Date', font: { size: 14 } }, 
+            type: 'date', 
+            rangeslider: { 
+              visible: true, 
+              bgcolor:'var(--chart-plot)',
+              bordercolor: 'var(--grid-color)',
+              borderwidth: 1,
+              thickness: 0.1
+            }, 
+            gridcolor:'var(--grid-color)', 
+            zerolinecolor:'var(--zeroline-color)',
+            tickfont: { size: 12 }
+          },
+          yaxis: { 
+            title: { text: 'Cost ($)', font: { size: 14 } }, 
+            gridcolor:'var(--grid-color)', 
+            zerolinecolor:'var(--zeroline-color)',
+            tickfont: { size: 12 },
+            tickprefix: '$',
+            hoverformat: '$,.0f'
+          },
+          hoverlabel: { 
+            bgcolor: "#FFF", 
+            font: { size: 13, color: '#333' },
+            bordercolor: '#ddd'
+          },
+          legend: { 
+            orientation: 'h',
+            y: -0.15
+          }
+        };
+        
+        Plotly.newPlot('costPlot', costTraces, layoutC, commonConfig);
+
+        // Chart 3: Net Benefit Chart
+        let cumNet = 0;
+        const netBenefit = rows.map(r => cumNet += (+r.hypothetical_cost - +r.actual_cost));
+        
+        const traceN = { 
+          x: dates, 
+          y: netBenefit, 
+          mode: 'lines+markers', 
+          name: 'Cumulative Net Benefit', 
+          fill: 'tozeroy',
+          fillcolor: 'rgba(148, 103, 189, 0.2)',
+          marker: { size: 6, color: '#9467bd', line: { width: 1, color: '#7a4a9d' } },
+          line: { width: 3, shape: 'spline', smoothing: 0.3, color: '#9467bd' },
+          hovertemplate: '%{y:$,.0f}<extra>Net Benefit</extra>'
+        };
+        
+        const layoutN = {
+          paper_bgcolor: 'var(--chart-paper)', 
+          plot_bgcolor: 'var(--chart-plot)', 
+          font: { family: "'Inter', sans-serif", color: 'var(--text-color)' },
+          margin: { t: 10, r: 30, b: 60, l: 70 }, 
+          hovermode: 'closest',
+          xaxis: { 
+            title: { text: 'Date', font: { size: 14 } }, 
+            type: 'date', 
+            gridcolor:'var(--grid-color)', 
+            zerolinecolor:'var(--zeroline-color)',
+            tickfont: { size: 12 }
+          },
+          yaxis: { 
+            title: { text: 'Cumulative Net Benefit ($)', font: { size: 14 } }, 
+            gridcolor:'var(--grid-color)', 
+            zerolinecolor:'var(--zeroline-color)',
+            tickfont: { size: 12 },
+            tickprefix: '$',
+            hoverformat: '$,.0f'
+          },
+          hoverlabel: { 
+            bgcolor: "#FFF", 
+            font: { size: 13, color: '#333' },
+            bordercolor: '#ddd'
+          },
+          showlegend: false
+        };
+        
+        Plotly.newPlot('netBenefitPlot', [traceN], layoutN, commonConfig);
+
+      }).catch(error => {
+        console.error('Error loading data:', error);
+        document.querySelectorAll('.kpi-value').forEach(el => {
+          el.textContent = 'Error loading data';
+        });
       });
-    }).catch(console.error);
+    });
   </script>
 </body>
 </html>
